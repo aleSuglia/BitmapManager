@@ -1,8 +1,12 @@
 #include "BitmapFile.h"
+#include <vector>
+#include <cstring>
+#include "UtilityFunction.h"
 
 BitmapFile::BitmapFile(const std::string& file_name) :
   reversed_pixel_data(std::vector<unsigned char>()),
   original_pixel_data(std::vector<unsigned char>()){
+  dib_header.palette = NULL;
   read_bmp_file(file_name);
 }
 
@@ -30,6 +34,16 @@ BitmapFile& BitmapFile::operator=(const BitmapFile& bmp) {
   return *this;
 }
 
+BitmapFile::~BitmapFile() {
+
+  // dealloco la memoria 'eventualmente' allocata per la palette di colori
+  if(dib_header.palette != NULL) {
+    for(unsigned int i = 0; i < dib_header.num_colors; i++)
+      delete [] dib_header.palette[i];
+
+    delete [] dib_header.palette;
+  }
+}
 /**
   Costruisce l'immagine corrente a partire dal contenuto
   del file il cui nome è specificato in input al metodo
@@ -77,12 +91,16 @@ void BitmapFile::read_bmp_file(const std::string& file_name) {
   // Se l'immagine presenta una profondità minore di 16 allora è necessario far riferimento
   // alla tabella di colori specificata
   // dib_header.num_colors indica i colori adoperati e la dimensione della rispettiva tabella di colori
-  char **palette;
-  if(dib_header.num_colors != 0) {
-    palette = new char*[dib_header.num_colors];
-    for(unsigned int i = 0; i < dib_header.num_colors; i++) {
-      palette[i] = new char[4];
-      file_stream.read(palette[i], sizeof palette[i]);
+
+  if(dib_header.bits_per_pixel <= 8) {
+    // numero di colori della palette Ogni elemento della palette è nel formato (B,G,R, RES)
+    int num_colors = (file_header.data_offset-54)/4;
+
+    dib_header.palette = new unsigned char*[num_colors];
+    for(int i = 0; i < num_colors; i++) {
+      dib_header.palette[i] = new unsigned char[4];
+      file_stream.read((char*) dib_header.palette[i], 4);
+      //std::cout << "R: " << (int)dib_header.palette[i][2] << " G: " << (int)dib_header.palette[i][1] << " B: " << (int)dib_header.palette[i][0] << std::endl;
     }
 
   }
@@ -97,50 +115,37 @@ void BitmapFile::read_bmp_file(const std::string& file_name) {
   // In questo caso è necessario effettuare manualmente il calcolo della dimensione per
   // poter operare correttamente in fase di lettura dell'immagine
   int real_bitmap_size = (dib_header.bitmap_size == 0) ? dib_header.width *
-                                                         (dib_header.bits_per_pixel / 8) * dib_header.height :
-                                                         dib_header.bitmap_size;
-
+							 (dib_header.bits_per_pixel / 8) * dib_header.height :
+							 dib_header.bitmap_size;
 
   original_pixel_data.assign(real_bitmap_size, 0);
   // Legge la parte relativa al contenuto dell'immagine vero e proprio
   file_stream.read((char*)&original_pixel_data[0], real_bitmap_size);
-
   /*
-      Attualmente i pixel risultano essere disposti in verso
+      Se dib_header.height > 0 i pixel risultano essere disposti in verso
       inverso, ovvero ogni pixel viene memorizzato  dal basso(a sinistra) verso l'alto.
       (0,0)B, (0,1)G; (1,0)R, (1,1)W; -> R(1,0)-W(1,1)-B(0,1)-(0,0)G
   */
-
-  // Se l'immagine adopera l'algoritmo di compressio RLE8 effettuo la decompressione
-  // ATTENZIONE: Attualmente non implementata
 
   if(dib_header.bits_per_pixel == 8)
     file_header.data_offset -= 1024;
 
   // Controllo che l'immagine non sia stata compressa con un algoritmo di compressione
   // Se fosse stata compressa, provvedo a decomprimerla recuperando i pixel
-  if(dib_header.compression != 0)
-    original_pixel_data = decompress_pixel_data();
+  /*if(dib_header.compression != 0)
+    reversed_pixel_data = decompress_pixel_data();
+  */
 
-  if(dib_header.bits_per_pixel < 16)
-    fix_pixel_array(palette);
-  else
-    fix_pixel_array();
+  fix_pixel_array();
 
   file_stream.close();
 
-  if(palette != NULL) {
-    for(unsigned int i = 0; i < dib_header.num_colors; i++)
-      delete [] palette[i];
-
-    delete [] palette;
-  }
   print_bitmap_information();
 
 
 }
 
-void BitmapFile::fix_pixel_array(char **color_palette) {
+void BitmapFile::fix_pixel_array() {
   /*
       Effettuo una rotazione delle triplette in modo tale da ottenere
       l'array di pixel con le triplette disposte in modo corretto.
@@ -151,58 +156,237 @@ void BitmapFile::fix_pixel_array(char **color_palette) {
   int tot_size = (dib_header.bitmap_size == 0 ) ? original_pixel_data.size() : dib_header.bitmap_size;
   int height = dib_header.height, width = dib_header.width;
 
-  if(dib_header.bits_per_pixel == 24) {
-    reversed_pixel_data = original_pixel_data;
+  switch(dib_header.bits_per_pixel) {
+    case 24: {
+	reversed_pixel_data = original_pixel_data;
 
-    for(int i = 0; i <= tot_size-2; i+=3)
-      _swap(reversed_pixel_data[i], reversed_pixel_data[i+2]);
+	for(int i = 0; i <= tot_size-2; i+=3)
+	  _swap(reversed_pixel_data[i], reversed_pixel_data[i+2]);
 
 
-    /*
+	/*
        Accorpo le varie triplette in modo tale da poterle gestire in maniera
        più semplice
       */
-    std::vector<RgbStruct> rgb_struct;
+	std::vector<RgbStruct> rgb_struct;
 
-    for(int i = 0; i <= tot_size-2; i+=3)
-      rgb_struct.push_back(RgbStruct(reversed_pixel_data[i], reversed_pixel_data[i+1], reversed_pixel_data[i+2]));
+	for(int i = 0; i <= tot_size-2; i+=3)
+	  rgb_struct.push_back(RgbStruct(reversed_pixel_data[i], reversed_pixel_data[i+1], reversed_pixel_data[i+2]));
 
-    /* Ricreo l'array di pixel_data effettuando un'operazione di rotazione sul vettore
+	/* Ricreo l'array di pixel_data effettuando un'operazione di rotazione sul vettore
        Gli elementi devono necessariamente essere letti dal basso verso l'alto e da sinistra
        verso destra */
 
-    reversed_pixel_data.clear();
-    for(int i = height-1; i >= 0; i--) {
-      for(int j = 0; j < width; j++) {
-        reversed_pixel_data.push_back(rgb_struct[i*width+j].r);
-        reversed_pixel_data.push_back(rgb_struct[i*width+j].g);
-        reversed_pixel_data.push_back(rgb_struct[i*width+j].b);
+	reversed_pixel_data.clear();
+	for(int i = height-1; i >= 0; i--) {
+	  for(int j = 0; j < width; j++) {
+	    reversed_pixel_data.push_back(rgb_struct[i*width+j].r);
+	    reversed_pixel_data.push_back(rgb_struct[i*width+j].g);
+	    reversed_pixel_data.push_back(rgb_struct[i*width+j].b);
+	  }
+	}
       }
-    }
-  }else if(dib_header.bits_per_pixel == 1) {
-    int bit = 128;
-    for(std::vector<unsigned char>::const_iterator it = original_pixel_data.begin(),
-        ed = original_pixel_data.end();
-        it != ed;
-        ) {
-      if(bit == 128)
-        ++it;
+      break;
+    case 1: {
+	// scansiono l'array di pixel e ne genero un secondo
+	// che contenga le triplette RGB prelevandole dalla palette dell'immagine
+	std::vector<RgbStruct> rgb_vect;
+	int num_relevant_byte = 0, useless_byte = 0;
+	// Se il numero di pixel memorizzati su una riga
+	// supera 32 (sfrutto più di 32bit per memorizzare una riga)
+	if(width > 32) {
+	  if((width%8) == 0) {
+	    num_relevant_byte = (width/8);
+	  } else {
+	    num_relevant_byte = (width/8)+1;
+	  }
+	  useless_byte = correct_number_byte(num_relevant_byte) - num_relevant_byte;
+	} else { // per memorizzare una riga ho bisogno di meno di 32bit
+	  useless_byte = (32-width)/8;
+	  num_relevant_byte = 4-useless_byte;
+	}
+	int cont_pixel = 0;
 
-      if (*it & bit) {
-        reversed_pixel_data.push_back(color_palette[1][2]);
-        reversed_pixel_data.push_back(color_palette[1][1]);
-        reversed_pixel_data.push_back(color_palette[1][0]);
-      } else {
-        reversed_pixel_data.push_back(color_palette[0][2]);
-        reversed_pixel_data.push_back(color_palette[0][1]);
-        reversed_pixel_data.push_back(color_palette[0][0]);
+	for(std::vector<unsigned char>::const_iterator it = original_pixel_data.begin(),
+	    ed = original_pixel_data.end();
+	    it != ed;
+	    ++it) {
+	  // Acquisito il primo carattere, valuto quelle che soni i bit che lo compongono
+	  // Se il bit è 0 allora faccio corrispondere ad esso il primo elemento della palette
+	  // altrimenti faccio corrispondere a questo il secondo bit della palette
+
+	  // Devo prestare attenzione a non considerare i bit 0 usati come padding per raggiungere
+	  // la rappresentazione a 32 bit
+
+
+	  // genero la rappresentazione a bit del carattere corrente
+	  std::vector<bool> curr_char_bits = char_to_bitset(*it);
+
+	  // Effettuo la valutazione per ogni singolo bit generando la tripletta
+	  // corrispondente
+
+	  for(std::vector<bool>::const_iterator it_bit = curr_char_bits.begin(),
+	      ed_bit = curr_char_bits.end();
+	      it_bit != ed_bit && cont_pixel != width;
+	      ++it_bit, cont_pixel++) {
+	    // se bit è uguale a 0 (rappresentato con il valore booleano 'falso')
+	    if(!(*it_bit)) {
+	      // inserisco una tripletta con la palette in posizione 0
+	      rgb_vect.push_back(RgbStruct(dib_header.palette[0][2], dib_header.palette[0][1], dib_header.palette[0][0]));
+	    } else {
+	      // inserisco una tripletta con la palette in posizione 1
+	      rgb_vect.push_back(RgbStruct(dib_header.palette[1][2], dib_header.palette[1][1], dib_header.palette[1][0]));
+	    }
+	  }
+
+	  // ho terminato una riga, verifico se ho la necessità di skippare alcuni
+	  // bit di padding presenti nel vettore di pixel
+	  if(cont_pixel == width) {
+	    for(int i = 0; i < useless_byte && it != ed; i++)
+	      ++it;
+	    cont_pixel = 0;
+
+	  }
+	}
+
+	// L'immagine è stata memorizzata dall'alto verso il basso
+	// Non ho la necessità di capovolgere i pixel
+	if(dib_header.height < 0) {
+	  dib_header.height = dib_header.height*-1;
+	  for(std::vector<RgbStruct>::const_iterator it = rgb_vect.begin(),
+	      ed = rgb_vect.end();
+	      it != ed;
+	      ++it) {
+	    reversed_pixel_data.push_back(it->r);
+	    reversed_pixel_data.push_back(it->g);
+	    reversed_pixel_data.push_back(it->b);
+
+	  }
+
+	} else {
+	  for(int i = height-1; i >= 0; i--) {
+	    for(int j = 0; j < width; j++) {
+	      reversed_pixel_data.push_back(rgb_vect[i*width+j].r);
+	      reversed_pixel_data.push_back(rgb_vect[i*width+j].g);
+	      reversed_pixel_data.push_back(rgb_vect[i*width+j].b);
+	    }
+	  }
+	}
+
+      } break;
+    case 4: {
+	// scansiono l'array di pixel e ne genero un secondo
+	// che contenga le triplette RGB prelevandole dalla palette dell'immagine
+	std::vector<RgbStruct> rgb_vect;
+	int num_relevant_byte, useless_byte, num_nibble, color_index;
+	num_relevant_byte = (width%2==0) ? width/2 : (width/2)+1;
+
+	if(width > 8) {
+	  useless_byte = correct_number_byte(num_relevant_byte) - num_relevant_byte;
+	} else {
+	  // i pixel di una riga dell'immagine
+	  // possono essere memorizzati in 4 byte (32bit)
+	  useless_byte = 4 - num_relevant_byte;
+	}
+
+	std::vector<unsigned char>::const_iterator it = original_pixel_data.begin(),
+	    ed = original_pixel_data.end();
+	num_nibble = 1;
+
+	while(it != ed) {
+	  // il numero di pixel esaminati è minore della grandezza di una riga dell'immagine
+	  if(num_nibble <= width) {
+	    if((num_nibble % 2)!= 0)
+	      color_index = *it >> 4;
+	    else
+	      color_index = *it & 0x0f;
+
+	    rgb_vect.push_back(RgbStruct(dib_header.palette[color_index][2], dib_header.palette[color_index][1], dib_header.palette[color_index][0]));
+
+
+	    if((num_nibble%2) == 0 && num_nibble != width)
+	      ++it;
+	    num_nibble++;
+
+	  } else {
+	    for(int i = 0; i < useless_byte; i++)
+	      ++it;
+
+	    // ricomincio a scandire la linea
+	    num_nibble = 1;
+	    ++it; // mi posiziono sul nuovo byte
+	  }
+
+
+	}
+
+	// L'immagine è stata memorizzata dall'alto verso il basso
+	// Non ho la necessità di capovolgere i pixel
+	if(dib_header.height < 0) {
+	  dib_header.height = dib_header.height*-1;
+	  for(std::vector<RgbStruct>::const_iterator it = rgb_vect.begin(),
+	      ed = rgb_vect.end();
+	      it != ed;
+	      ++it) {
+	    reversed_pixel_data.push_back(it->r);
+	    reversed_pixel_data.push_back(it->g);
+	    reversed_pixel_data.push_back(it->b);
+
+	  }
+
+	} else {
+	  for(int i = height-1; i >= 0; i--) {
+	    for(int j = 0; j < width; j++) {
+	      reversed_pixel_data.push_back(rgb_vect[i*width+j].r);
+	      reversed_pixel_data.push_back(rgb_vect[i*width+j].g);
+	      reversed_pixel_data.push_back(rgb_vect[i*width+j].b);
+	    }
+	  }
+	}
+
+
+      } break;
+    case 8:
+      {
+	std::vector<RgbStruct> vect_rgb;
+	int index;
+
+	for(std::vector<unsigned char>::const_iterator it = original_pixel_data.begin(),
+	    ed = original_pixel_data.end();
+	    it != ed;
+	    ++it) {
+	  index = *it;
+	  vect_rgb.push_back(RgbStruct(dib_header.palette[index][2],dib_header.palette[index][1], dib_header.palette[index][0]));
+	}
+
+	// L'immagine è stata memorizzata dall'alto verso il basso
+	// Non ho la necessità di capovolgere i pixel
+	if(dib_header.height < 0) {
+	  dib_header.height = dib_header.height*-1;
+	  for(std::vector<RgbStruct>::const_iterator it = vect_rgb.begin(),
+	      ed = vect_rgb.end();
+	      it != ed;
+	      ++it) {
+	    reversed_pixel_data.push_back(it->r);
+	    reversed_pixel_data.push_back(it->g);
+	    reversed_pixel_data.push_back(it->b);
+
+	  }
+	} else {
+
+	  for(int i = height-1; i >= 0; i--) {
+	    for(int j = 0; j < width; ++j) {
+	      reversed_pixel_data.push_back(vect_rgb[i*width+j].r);
+	      reversed_pixel_data.push_back(vect_rgb[i*width+j].g);
+	      reversed_pixel_data.push_back(vect_rgb[i*width+j].b);
+	    }
+	  }
+
+	}
+
       }
+      break;
 
-      if (bit > 1)
-        bit >>= 1;
-      else
-        bit = 128;
-    }
   }
 
 }
@@ -242,11 +426,25 @@ void BitmapFile::print_bitmap_information() {
   std::cout << "Bits per pixel: " << dib_header.bits_per_pixel << std::endl;
   std::cout << "Compression: " << dib_header.compression << std::endl;
   std::cout << "Number of colors: " << dib_header.num_colors << std::endl;
-  //    for(std::vector<unsigned char>::const_iterator it = original_pixel_data.begin(),
-  //        ed = original_pixel_data.end();
-  //        it != ed;
-  //        ++it)
-  //        std::cout << (int) *it << std::endl;
+
+  //print_pixel_data();
+}
+
+void BitmapFile::print_pixel_data() {
+  for(std::vector<unsigned char>::const_iterator it = original_pixel_data.begin(),
+      ed = original_pixel_data.end();
+      it != ed;
+      ++it)
+    std::cout << (int)*it << std::endl;
+
+}
+
+void BitmapFile::print_pixel_data(const std::vector<unsigned char>& vet) {
+  for(std::vector<unsigned char>::const_iterator it = vet.begin(),
+      ed = vet.end();
+      it != ed;
+      ++it)
+    std::cout << (int)*it << std::endl;
 
 }
 
@@ -288,6 +486,15 @@ void BitmapFile::copy_bmp(const std::string& file_name) {
     file_stream.write((char*)&dib_header.num_colors, sizeof dib_header.num_colors);
     file_stream.write((char*)&dib_header.important_colors, sizeof dib_header.important_colors);
 
+    // Devo procedere nel salvataggio della palette di colori
+    if(dib_header.bits_per_pixel <= 8) {
+      int num_colors = file_header.data_offset - 54;
+
+      for(int i = 0; i < num_colors; i++) {
+	file_stream.write((char*)dib_header.palette[i], 4);
+      }
+    }
+
     // Scrive la parte dei dati dell'immagine
     file_stream.write((char*)&original_pixel_data[0], dib_header.bitmap_size);
     file_stream.close();
@@ -303,30 +510,7 @@ BitmapTO* BitmapFile::getTO() {
   if(this->original_pixel_data.empty()) {
     return NULL;
   }
-
-  std::string format;
-  switch(this->dib_header.bits_per_pixel){
-    case 1:
-      format = "RGB1";
-      break;
-    case 4:
-      format = "RGB4";
-      break;
-    case 8:
-      format = "RGB8";
-    case 16:
-      format = "RGB16";
-      break;
-    case 24:
-      format = "RGB24";
-      break;
-    case 32:
-      format = "RGB32";
-      break;
-  }
-
-  return  new BitmapTO(reversed_pixel_data, this->dib_header.width, this->dib_header.height, this->dib_header.bits_per_pixel, format);
-
+  return  new BitmapTO(reversed_pixel_data, this->dib_header.width, this->dib_header.height, this->dib_header.bits_per_pixel);
 }
 
 /**
@@ -334,6 +518,9 @@ BitmapTO* BitmapFile::getTO() {
   le informazioni fondamentali riguardanti l'immagine
 */
 void BitmapFile::fill_bmp_header(int width, int height, int bits_per_pixel, int bitmap_size) {
+  int num_color_palette = (bits_per_pixel <= 8) ? (pow(2,bits_per_pixel)*4) : 0,
+      data_offset = (bits_per_pixel <= 8) ? 54 + num_color_palette : 54;
+
   // Inizializzo gli header
   memset(&file_header, 0, sizeof(file_header));
   memset(&dib_header, 0, sizeof(dib_header));
@@ -341,17 +528,18 @@ void BitmapFile::fill_bmp_header(int width, int height, int bits_per_pixel, int 
   // sigla fissa presente nelle immagini bitmap
   strcpy(file_header.file_type, (const char*)"BM");
   // La dimensione del file è sempre pari alla dimensione dell'array di pixel più la dimensione dei due header
-  file_header.file_size = bitmap_size+54;
+  file_header.file_size = bitmap_size+data_offset;
   // Valori numerici riservati
   file_header.reserved1 = 0;
   file_header.reserved2 = 0;
   // fine valori numerici riservati
 
   // Offset mediante il quale effettuare l'accesso alla sezione dei dati
-  file_header.data_offset = 54;
+  file_header.data_offset = data_offset;
 
   // dimensione dell'header corrente
-  dib_header.header_size = sizeof(dib_header);
+  // è necessario valutare se è presente la palette o meno
+  dib_header.header_size = (bits_per_pixel <= 8) ? 40 * num_color_palette : 40;
   // grandezza della sezione dati
   dib_header.bitmap_size = bitmap_size;
   // profondità del colore
@@ -385,32 +573,44 @@ void BitmapFile::retrieve_original_pixel_data() {
   original_pixel_data = reversed_pixel_data;
   int tot_size = dib_header.bitmap_size;
   int height = dib_header.height, width = dib_header.width;
-  for(int i = 0; i <= tot_size-2; i+=3) {
-    _swap(original_pixel_data[i], original_pixel_data[i+2]);
-  }
 
-  /*
+  switch(dib_header.bits_per_pixel) {
+    case 1:
+      break;
+    case 4:
+      break;
+    case 8:
+      break;
+    case 24:
+      for(int i = 0; i <= tot_size-2; i+=3) {
+	_swap(original_pixel_data[i], original_pixel_data[i+2]);
+      }
+
+      /*
      Accorpo le varie triplette in modo tale da poterle gestire in maniera
      più semplice
     */
-  std::vector<RgbStruct> rgb_struct;
+      std::vector<RgbStruct> rgb_struct;
 
-  for(int i = 0; i <= tot_size-2; i+=3)
-    rgb_struct.push_back(RgbStruct(original_pixel_data[i], original_pixel_data[i+1], original_pixel_data[i+2]));
+      for(int i = 0; i <= tot_size-2; i+=3)
+	rgb_struct.push_back(RgbStruct(original_pixel_data[i], original_pixel_data[i+1], original_pixel_data[i+2]));
 
-  /* Ricreo l'array di pixel_data effettuando un'operazione di rotazione sul vettore
+      /* Ricreo l'array di pixel_data effettuando un'operazione di rotazione sul vettore
      Gli elementi devono necessariamente essere letti dal basso verso l'alto e da sinistra
      verso destra */
 
-  original_pixel_data.clear();
+      original_pixel_data.clear();
 
-  for(int i = height-1; i >= 0; i--) {
-    for(int j = 0; j < width; j++) {
-      original_pixel_data.push_back(rgb_struct[i*width+j].r);
-      original_pixel_data.push_back(rgb_struct[i*width+j].g);
-      original_pixel_data.push_back(rgb_struct[i*width+j].b);
 
-    }
+      for(int i = height-1; i >= 0; i--) {
+	for(int j = 0; j < width; j++) {
+	  original_pixel_data.push_back(rgb_struct[i*width+j].r);
+	  original_pixel_data.push_back(rgb_struct[i*width+j].g);
+	  original_pixel_data.push_back(rgb_struct[i*width+j].b);
+
+	}
+      }
+      break;
   }
 
 }
@@ -420,75 +620,13 @@ void BitmapFile::retrieve_original_pixel_data() {
 bool BitmapFile::is_dib_header_valid() {
   int nbits = dib_header.bits_per_pixel, comp = 0;
 
-  if (!(nbits == 1 || nbits == 4 || nbits == 8 || nbits == 16 || nbits == 24 || nbits == 32) ||
-      dib_header.planes != 1 || comp > BI_BITFIELDS)
+  if (!(nbits == 1 || nbits == 4 || nbits == 8 || nbits == 24 ) ||
+      dib_header.planes != 1 || comp > BI_RLE4)
     return false; // immagine non valida
   if (!(comp == BI_RGB || (nbits == 4 && comp == BI_RLE4) ||
-        (nbits == 8 && comp == BI_RLE8) || ((nbits == 16 || nbits == 32) && comp == BI_BITFIELDS)))
+	(nbits == 8 && comp == BI_RLE8) ) )
     return false; // tipo di compressione non valido
   return true;
-}
-
-
-
-std::vector<unsigned char> BitmapFile::compress_pixel_data() {
-  /**
-  0	Fine della linea
-  1	Fine del file bitmap
-  2	Delta. I 2 byte che seguono il carattere di escape contengono valori positivi
-      che indicano gli offset, orizzontali e verticali, per poter indirizzare il prossimo pixel
-      a partire dalla posizione corrente.
-
-  */
-  unsigned char prev = original_pixel_data[0];
-  std::vector<unsigned char> compressed;
-
-  for(size_t i = 1, count_equal = 0, tot_size = dib_header.bitmap_size; i < tot_size-1; i++) {
-    if(original_pixel_data[i] == prev) {
-      count_equal++;
-    } else {
-      compressed.push_back(count_equal);
-      compressed.push_back(prev);
-      count_equal = 1; // valore trovato la prima volta
-    }
-  }
-
-  // Inserisce marcatore di fine bitmap
-  compressed.push_back(0);
-  compressed.push_back(1);
-
-  return compressed;
-}
-
-std::vector<unsigned char> BitmapFile::decompress_pixel_data() {
-  std::vector<unsigned char> decompress;
-  if(original_pixel_data.size() % 2 != 0)
-    throw std::logic_error("Impossibile effettuare la decompressione dell'immagine");
-
-  int count, color_index;
-  bool end_flag = false;
-
-  for(size_t i = 0, tot_size = original_pixel_data.size(); i <= tot_size-2 && !end_flag; i+=2) {
-    count = (int) original_pixel_data[i];
-    color_index = (int) original_pixel_data[i+1];
-
-    if( count == 0) {
-      switch(color_index) {
-        case 1:
-          end_flag = true; // EOF trovato
-          break;
-        case 2: // delta
-          break;
-      }
-    } else {
-      for(int count_push = 0; count_push < count; count_push++)
-        decompress.push_back(color_index);
-
-    }
-
-  }
-
-  return decompress;
 }
 
 /**

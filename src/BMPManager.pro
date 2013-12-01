@@ -23,7 +23,8 @@ SOURCES += main.cpp\
     ModifyImageExecutor.cpp \
     ImageOperation.cpp \
     SaveImageExecutor.cpp \
-    BitmapFile.cpp
+    BitmapFile.cpp \
+    RLECodec.cpp
 
 HEADERS  += \
     BitmapFile.h \
@@ -37,7 +38,9 @@ HEADERS  += \
     ImageOperation.h \
     BitmapTO.h \
     ModifyImageExecutor.h \
-    SaveImageExecutor.h
+    SaveImageExecutor.h \
+    UtilityFunction.h \
+    RLECodec.h
 
 FORMS += \
     mainwindow.ui
