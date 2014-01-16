@@ -5,7 +5,6 @@
 #-------------------------------------------------
 
 QT       += core gui
-
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = BMPManager
@@ -24,6 +23,9 @@ SOURCES += main.cpp\
     ImageOperation.cpp \
     SaveImageExecutor.cpp \
     BitmapFile.cpp \
+    BitmapTOwP.cpp \
+    PaletteIndexer.cpp \
+    UtilityFunction.cpp \
     RLECodec.cpp
 
 HEADERS  += \
@@ -36,10 +38,12 @@ HEADERS  += \
     IExecutor.h \
     OpenImageExecutor.h \
     ImageOperation.h \
+    UtilityFunction.h \
     BitmapTO.h \
     ModifyImageExecutor.h \
     SaveImageExecutor.h \
-    UtilityFunction.h \
+    BitmapTOwP.h \
+    PaletteIndexer.h \
     RLECodec.h
 
 FORMS += \

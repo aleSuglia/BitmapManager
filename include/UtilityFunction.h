@@ -3,34 +3,33 @@
 
 #include <vector>
 #include <climits>
-#include <stack>
 
-int correct_number_byte(int val) {
-    int bytes = val;
-    while((bytes%4) != 0)
-        bytes++;
+/*!
+  \brief Restituisce il valore intero, multiplo di 4, che segue immediatamente quello specificato
 
-    return bytes;
-}
+  e.g.
+    correct_number_byte(5) = 8
+    correct_number_byte(8) = 8
 
-std::vector<bool> char_to_bitset(char c) {
-    std::vector<bool> bools;
+  @param val valore intero del quale si intende sapere il multiplo di 4 più vicino
+  @param valore intero multiplo di 4 >= a quello specificato
+*/
+int correct_number_byte(int val);
+/*!
+  \brief Restituisce la rappresentazione binaria del carattere specificato in input
 
-    for (int i = CHAR_BIT - 1; i >= 0; --i)
-        bools.push_back(c & (1 << i));
+  @param c carattere del quale si intende sapere la rappresentazione binaria
+  @return vettore di booleani che rappresenta il carattere in binario
+*/
+std::vector<bool> char_to_bitset(char c);
 
-    return bools;
-}
+/*!
+  \brief Trasforma la rappresentazione binaria passata in input
+  in un carattere.
 
-char bitset_to_char(std::vector<bool> bools) {
-    char c = 0;
-
-    for (int i = 0,pos = CHAR_BIT - 1; pos >= 0; --pos, i++) {
-        if (bools[i])
-            c = c | (1 << pos);
-    }
-
-    return c;
-}
+  @param bools rappresentazione binaria di un byte
+  @return carattere risultante dall'interpretazione della sequenza di byte
+*/
+char bitset_to_char(std::vector<bool> bools);
 
 #endif // UTILITYFUNCTION_H

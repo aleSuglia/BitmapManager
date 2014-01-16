@@ -9,6 +9,5 @@ format could be found on the MSDN pages: http://msdn.microsoft.com/en-us/library
 
 FUTURE WORKS
 --------------
- - Implement file copying functionality for images with a bit-depth equal to 1, 4, 8 bit per pixel
- - Implement RLE compression algorithm for images with a bit-depth equal to 4 and 8 bit per pixel 
+ - Implement RLE compression algorithm for images with a bit-depth equal to 4 and 8 bit per pixel (not yet completed)
  - Support 16, 32 bit BMP images

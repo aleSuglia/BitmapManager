@@ -19,6 +19,11 @@
 namespace Ui{
   class MainWindow;
 }
+
+/*!
+  \brief Classe che rappresenta la GUI principale del sistema a partire
+  dalla quale è possibile svolgere tutte le operazioni di gestione dell'immagine.
+*/
 class MainWindow : public QMainWindow
 {
   Q_OBJECT
@@ -26,13 +31,30 @@ class MainWindow : public QMainWindow
 public:
   explicit MainWindow(QWidget *parent = 0);
   ~MainWindow();
-
+/*
+  Rappresentano le operazioni da effettuare in seguito all'attivazione
+  di specifici eventi associati ad entità dell'interfaccia grafica.
+*/
 private slots:
+  /*!
+    \brief Permette l'apertura di un'immagine selezionabile dall'interfaccia grafica
+  */
   void open();
+  /*!
+    \brief Mostra un panello informativo relativo al programma
+  */
   void about();
-  void zoomIn();
-  void zoomOut();
+  /*!
+    \brief Mostra le informazioni specifiche relative all'immagine corrente
+  */
+  void infoImage();
+  /*!
+    \brief Modifica l'immagine corrente secondo l'effetto richiesto dall'utente
+  */
   void modifyCurrentImage();
+  /*!
+    \brief Permette all'utente di salvare l'immagine corrente in una locazione del proprio sistema
+  */
   void saveImage();
 
 private:
@@ -45,9 +67,8 @@ private:
   QAction *openAct;
   QAction *exitAct;
   QAction *saveAct;
-  QAction *zoomInAct;
-  QAction *zoomOutAct;
   QAction *aboutAct;
+  QAction *infoImageAct;
 
   QMenu *fileMenu;
   QMenu *helpMenu;

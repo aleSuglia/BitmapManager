@@ -1,13 +1,11 @@
 #include "ImageOperation.h"
 
-ImageEffectOperation getEffectEnumValue(const std::string& enum_string){
-    if("Negative" == enum_string) {
+ImageEffectOperation getEffectEnumValue(const std::string& effect_name){
+    if("Negative" == effect_name) {
         return NEGATIVE;
-    } else if("Grayscale" == enum_string) {
+    } else if("Grayscale" == effect_name) {
         return GRAYSCALE;
-    } else if("Oil" == enum_string) {
-        return OIL;
-    } else if("Seppia" == enum_string) {
+    } else if("Seppia" == effect_name) {
         return SEPIA;
     }
 
@@ -20,7 +18,6 @@ std::vector<std::string> getSupportedFilters(){
 
     filters.push_back("Negative");
     filters.push_back("Grayscale");
-    //filters.push_back("Oil");
     filters.push_back("Seppia");
 
     return filters;

@@ -5,32 +5,29 @@
 #include <iostream>
 
 ResultStruct ModifyImageExecutor::executeOperation(RequestStruct request){
-    ImageEffectOperation op = *((ImageEffectOperation*) request.getAttribute(1));
-    BitmapTO* to = (BitmapTO*) request.getAttribute(2);
-    std::vector<unsigned char> result_array, original_array(to->getPixelData());
+  ImageEffectOperation op = *((ImageEffectOperation*) request.getAttribute(1));
+  BitmapTO* to = (BitmapTO*) request.getAttribute(2);
+
+  std::vector<unsigned char> result_array, original_array(to->getPixelData());
 
 
-    switch(op) {
+  switch(op) {
     case NEGATIVE:
-        result_array = imageToNegative(original_array);
-        break;
+      result_array = imageToNegative(original_array);
+      break;
     case GRAYSCALE:
-        // viene adoperata la medesima funzione dell'effetto seppia modificando
-        // il valore di profondità dell'effetto
-        result_array = imageToSepia(original_array, 0);
-        break;
-    /*case OIL: Non ancora implementato
-        break;*/
+      // viene adoperata la medesima funzione dell'effetto seppia modificando
+      // il valore di profondità dell'effetto
+      result_array = imageToSepia(original_array, 0);
+      break;
     case SEPIA:
-        // Il valore 20 scelto come intensità dell'effetto risulta essere
-        // un appropriato valore per ottenere un risultato opportuno
-        result_array = imageToSepia(original_array, 20);
-        break;
+      result_array = imageToSepia(original_array, 20);
+      break;
     default:
-        throw std::invalid_argument("L'effetto scelto non risulta essere supportato");
-    }
-    to->setPixelData(result_array);
-    return ResultStruct(1,to);
+      throw std::invalid_argument("L'effetto scelto non risulta essere supportato");
+  }
+  to->setPixelData(result_array);
+  return ResultStruct(1,to);
 }
 
 std::vector<unsigned char> imageToSepia(const std::vector<unsigned char>& pixels, int sepiaDepth) {
@@ -87,3 +84,4 @@ std::vector<unsigned char> imageToNegative(const std::vector<unsigned char>& pix
 
     return modifiedPixels;
 }
+
