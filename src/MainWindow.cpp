@@ -12,7 +12,6 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 
-
 MainWindow::MainWindow(QWidget *parent) :
   QMainWindow(parent),
   ui(new Ui::MainWindow)
@@ -169,17 +168,21 @@ void MainWindow::saveImage() {
 
 void MainWindow::about() {
   QMessageBox::about(this, tr("About"),
-                     tr("<p>Questo programma è stato realizzato a scopo didattico "
+                     tr("<img src=\"icon.png\" width=\"32\" height=\"32\">"
+                       "<p>Questo programma è stato realizzato a scopo didattico "
                         " durante l'insegnamento di Sistemi Multimediali per poter approfondire gli aspetti riguardanti la gestione di immagini "
-                        "ed in particolare per poter studiare in modo approfondito "
-                        "<a href=http://en.wikipedia.org/wiki/BMP_file_format>il formato BITMAP. </a></p>"
+                        "ed in particolare per poter studiare in modo approfondito il formato "
+                        "<a href=http://en.wikipedia.org/wiki/BMP_file_format>BITMAP. </a></p>"
                         "<p>Mediante l'utilizzo di tale sistema sarà possibile effettuare una serie di operazioni, quali:</p>"
                         "<ul><li>Aprire un file .bmp</li> "
                         "<li>Salvare un'immagine appena caricata in una specifica locazione del sistema</li>"
                         "<li>Modificare l'immagine caricata applicando varie tipologie di effetti</li></ul>"
                         "<br><br>"
-                        "Il sistema sviluppato stato realizzato da Alessandro Suglia ed "
-                        "è reperibile al seguente indirizzo: <a href=https://github.com/aleSuglia/BitmapManager></a>"
+                        "Il sistema sviluppato è stato realizzato da Alessandro Suglia ed "
+                        "è reperibile al seguente indirizzo: <a href=https://github.com/aleSuglia/BitmapManager>"
+                        "https://github.com/aleSuglia/BitmapManager</a>"
+                        "<br><br>"
+                        "<p align=center>Alessandro Suglia - alessandro.suglia@gmail.com (2014) </p>"
 
                         ));
 

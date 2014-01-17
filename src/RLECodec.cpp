@@ -53,7 +53,7 @@ std::vector<unsigned char> RLECodec::decode_rle_8(const std::vector<unsigned cha
   bool end_bitmap = false;
   unsigned int horiz_move, vert_move;
 
-  while(it != ed && !end_bitmap) {
+  while(it != (ed-1) && !end_bitmap) {
     // acquisisco il numero di ripetizioni di un dato pixel
     if(*it != 0) {
       cont = *it;
@@ -111,7 +111,7 @@ std::vector<unsigned char> RLECodec::decode_rle_4(const std::vector<unsigned cha
   unsigned int horiz_move, vert_move;
   unsigned char curr_char;
 
-  while(it != ed && !end_bitmap) {
+  while(it != (ed-1) && !end_bitmap) {
     // acquisisco il numero di ripetizioni di un dato pixel
     if(*it != 0) {
       cont = *it;
@@ -258,9 +258,92 @@ std::vector<unsigned char> RLECodec::encode_rle_8(const std::vector<unsigned cha
 
 // NON ANCORA IMPLEMENTATA
 std::vector<unsigned char> RLECodec::encode_rle_4(const std::vector<unsigned char>& vet, int width, int height) {
-  std::vector<unsigned char> ret;
+  std::vector<unsigned char> ret, abs_mode;
+  std::vector<unsigned char>::const_iterator curr_elem, future;
+  int cont_rep = 1, curr_char, cont_future;
+  int num_byte = (width%2 == 0) ? width/2 : width/2 + 1, num_abs, padding;
 
-  throw std::logic_error("Impossibile comprimere adoperando l'algoritmo RLE su immagini a 4bit");
+  // per ogni riga dell'immagine
+  for(int i = 0; i < height; i++) {
+
+    // il primo elemento è il primo valore della riga
+    curr_elem = vet.begin() + (i*num_byte); // puntatore al primo elemento della riga
+    curr_char = *curr_elem; // primo elemento della riga (parto da questo nel controllo)
+    ++curr_elem; // mi sposto sul secondo elemento
+    cont_rep = 1;
+
+    for(int j = 1; j < num_byte; j++) {
+      if(curr_char == *curr_elem) {
+        // se ho degli elementi da inserire provenienti dall'absolute mode
+        if(!abs_mode.empty()) {
+          cont_future = cont_rep+1;
+
+          for(int k = j+1; k < num_byte && *(curr_elem+k) == curr_char; k++)
+            cont_future++; // conta occorrenze possibili
+
+          if((cont_future*2) >= 8) {
+            num_abs = abs_mode.size();
+            ret.push_back(0);
+            ret.push_back(num_abs);
+            ret.insert(ret.end(), abs_mode.begin(), abs_mode.end());
+            padding = correct_number_byte(num_abs) - num_abs;
+            for(int k = 0; k < padding; k++)
+              ret.push_back(0);
+            abs_mode.clear();
+            cont_rep = 1;
+          }
+        }
+        cont_rep++;
+
+      } else { // trovato elemento diverso
+        // salvo solo valori ripetuti più di una volta (encoded mode)
+        if((cont_rep*2) >= 8) {
+          ret.push_back(cont_rep*2); // ogni byte contiene 2 nibble
+          ret.push_back(curr_char);
+          // carattere da controllare cambia
+          curr_char = *curr_elem;
+          cont_rep = 1;
+        } else { // sono in absolute mode
+          // Devo far si che vengano inserite tutte le ripetizioni
+          // che non fanno parte della modalità encoded
+          for(int k = 0; k < cont_rep; k++)
+            abs_mode.push_back(curr_char);
+          cont_rep = 1;
+          curr_char = *curr_elem;
+        }
+      }
+
+      // vado al carattere successivo
+      ++curr_elem;
+    }
+
+    // devo completare con absolute mode
+    if(!abs_mode.empty()) {
+      for(int k = 0; k < cont_rep; k++)
+        abs_mode.push_back(curr_char); // inserisco l'ultimo rimanente
+      num_abs = abs_mode.size();
+      ret.push_back(0);
+      ret.push_back(num_abs*2);
+      ret.insert(ret.end(), abs_mode.begin(), abs_mode.end());
+      padding = correct_number_byte(num_abs) - num_abs;
+      for(int k = 0; k < padding; k++)
+        ret.push_back(0);
+      abs_mode.clear();
+    } else { // completo con encoded
+      ret.push_back(cont_rep*2);
+      ret.push_back(curr_char);
+      curr_char = 0;
+      cont_rep = 1;
+    }
+    //fine della riga corrente
+    ret.push_back(0);
+    ret.push_back(0);
+  }
+
+  // fine del bitmap
+  ret.push_back(0);
+  ret.push_back(1);
+
   return ret;
 }
 

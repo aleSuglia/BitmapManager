@@ -60,20 +60,100 @@ public:
     BitmapTO(std::vector<unsigned char> vec, int width, int height, int bitmap_size,int num_bits, std::string info_bitmap, int compr_mode);
     BitmapTO(const BitmapTO& to);
     BitmapTO& operator=(const BitmapTO& to);
+    /*!
+      \brief Restituisce la larghezza dell'immagine corrente
+
+      @return la larghezza dell'immagine
+    */
     int getWidth() const;
+    /*!
+      \brief Modifica la larghezza corrente dell'immagine con il valore specificato
+
+      @param value nuovo valore per la larghezza dell'immagine
+    */
     void setWidth(int value);
+    /*!
+      \brief Restituisce l'altezza dell'immagine
+
+      @return altezza dell'immagine corrente
+    */
     int getHeight() const;
+    /*!
+      \brief Modifica l'altezza dell'immagine con il valore specificato
+    */
     void setHeight(int value);
+    /*!
+      \brief Restituisce la struttura dati adoperata per memorizzare i pixel dell'immagine
+
+      E' opportuno evitare di restituire frequentemente il suddetto oggetto in quanto
+      viene effettuata, ad ogni chiamata, una copia della struttura, la quale potrebbe contenere
+      un numero davvero elevato di elementi
+
+      @return la struttura dati contenente i pixel dell'immagine nella forma RGB
+    */
     std::vector<unsigned char> getPixelData() const;
+    /*!
+      \brief Restituisce un riferimento alla struttura dati adoperata per memorizzare i pixel dell'immagine
+
+      @return riferimento alla struttura dati contenente i pixel dell'immagine nella forma RGB
+    */
     unsigned char* getPixelDataPtr();
+    /*!
+      \brief Modifica il contenuto dell'immagine con quello indicato dalla struttura passata in input
+      @param value struttura dati contenente il nuovo contenuto dell'immagine
+
+    */
     void setPixelData(const std::vector<unsigned char> &value);
+    /*!
+      \brief Restituisce la profondità di colore dell'immagine
+      @return profondità di colore rappresentata come un intero
+    */
     int getBitsPerPixel() const;
+    /*!
+      \brief Modifica il valore corrente della profondità di colore con quello specificato
+    */
     void setBitsPerPixel(int value);
+    /*!
+      \brief Restituisce l'occupazione di memoria dell'immagine
+
+      Tale misura viene fornita in byte e non rappresenta il numero di elementi presenti
+      all'interno della struttura dati contenente i pixel, bensì rappresenta il numero di
+      elementi necessari per rappresentare l'immagine sul disco
+
+      @param value nuovo valore di profondità di colore dell'immagine
+    */
     int getBitmapSize() const;
+    /*!
+      \brief Modifica la dimensione della sezione dati dell'immagine con quella specificata
+      @param value nuova dimensione della sezione dati
+    */
     void setBitmapSize(int value);
+    /*!
+      \brief Restituisce i metadati dell'immagine in forma testuale
+
+      @return rappresentazione testuale formattata dei campi dell'header dell'immagine
+    */
     const char *getInfoBitmap() const;
+    /*!
+      \brief Modifica il valore relativo alla rappresentazione dei metadati dell'immagine
+      con quello specificato in input
+
+      @param value nuova rappresentazione testuale dei metadati dell'immagine
+    */
     void setInfoBitmap(const std::string &value);
+    /*!
+     * \brief Restituisce un valore simbolico che rappresenta la modalità di compressione adottata per l'immagine
+     *
+     *  I valori che la funzione può restituire sono uguali a quelle del tipo enumerativo BmpCompression
+     *
+     * @return valore simbolico che rappresenta l'algoritmo di compressione adoperato per l'immagine corrente
+     */
     int getComprMode() const;
+    /*!
+      \brief Modifica il valore simbolico che rappresenta l'algoritmo di compressione adottato
+
+      @param value nuovo valore simbolico che rappresenta la tecnica di compressione
+    */
     void setComprMode(int value);
 };
 

@@ -1,7 +1,6 @@
 #include "BitmapTO.h"
 #include "UtilityFunction.h"
 
-
 BitmapTO::BitmapTO()
   : pixelData(std::vector<unsigned char>()), aligned_data(0), width(0), height(0), bitmap_size(0), bits_per_pixel(0), info_bitmap(""), compr_mode(0) {
 }

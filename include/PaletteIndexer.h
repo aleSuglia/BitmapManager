@@ -9,10 +9,14 @@
 */
 struct RgbStruct {
 public:
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
+  unsigned char r; ///< valore rappresentativo della componente ROSSA della tripletta RGB
+  unsigned char g; ///< valore rappresentativo della componente VERDE della tripletta RGB
+  unsigned char b; ///< valore rappresentativo della componente BLU della tripletta RGB
 
+  /*!
+    \brief Costruisce questo oggetto adoperando i valori specificati in input
+
+  */
   RgbStruct(unsigned char newR, unsigned char newG, unsigned char newB){
     r = newR;
     g = newG;

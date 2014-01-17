@@ -1,7 +1,6 @@
 #include "BitmapTOwP.h"
 #include <cmath>
 
-
 unsigned char **BitmapTOwP::getPalette() const
 {
   return palette;

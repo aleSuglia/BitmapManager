@@ -14,7 +14,7 @@ typedef enum {
 
 /*!
   \brief Classe che implementa una serie di funzionalità per mettere in pratica la compressione secondo
-  l'algoritmo RLE (applicato alle immagini BITMAP - @link http://msdn.microsoft.com/en-us/library/cc250386.aspx)
+  l'algoritmo RLE (applicato alle immagini BITMAP - <a href="http://msdn.microsoft.com/en-us/library/cc250386.aspx">documentazione RLE</a>)
 
   Rispetto a quelle che sono le modalità di compressione supportate (BmpCompression) procede a comprimere
   o decomprimere l'insieme di byte passato in input e a restituire il risultato dell'operazione richiesta.
@@ -39,10 +39,6 @@ public:
   /*!
     \brief Codifica il contenuto del vettore passato in input secondo l'algoritmo di compressione specificato
 
-    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        ATTUALMENTE PARZIALMENTE SUPPORTATA
-    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
     Il contenuto del vettore deve essere strutturato esattamente rispetto ai canoni del formato BITMAP relativi ad un'immagine
     a 8-bit per pixel o 4-bit per pixel.
 
@@ -51,8 +47,8 @@ public:
 
     @param vet vettore di caratteri da comprimere
     @param compr_mode algoritmo di compressione da utilizzare (BmpCompression)
-    @param larghezza dell'immagine
-    @param altezza dell'immagine
+    @param width larghezza dell'immagine
+    @param height altezza dell'immagine
 
     @return vettore di caratteri opportunamente compresso
   */

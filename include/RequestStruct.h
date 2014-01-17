@@ -22,7 +22,7 @@ public:
     pari a quello indicata dal primo parametro.
 
     @param num_args numero di parametri che si sta specificando
-    @param varargs argomenti di input variabili
+    @param ... argomenti di input variabili
 
   */
   RequestStruct(int num_args, ...);

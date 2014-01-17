@@ -18,7 +18,7 @@
   e alla sua occupazione di memoria.
 */
 typedef struct {
-  char         file_type[2];   ///< Valore simbolico settato a "BM"
+  char         file_type[2]; ///< Sigla che rappresenta il tipo di file corrente (comunemente uguale a BM)
   unsigned int file_size; ///< dimensione totale del file
   short        reserved1; ///< valore riservato fissato a 0
   short        reserved2; ///< valore riservato fissato a 0
@@ -201,9 +201,6 @@ private:
     @return true se il nome termina con 'bmp' o 'BMP', false altrimenti
   */
   bool check_bmp_file(const std::string& file_name);
-  std::vector<unsigned char> compress_pixel_data();
-  std::vector<unsigned char> decompress_pixel_data();
-
 
 };
 

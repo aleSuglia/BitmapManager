@@ -4,6 +4,7 @@
 #include <cstring>
 #include <sstream>
 
+
 BitmapFile::BitmapFile(const std::string& file_name) :
   reversed_pixel_data(std::vector<unsigned char>()),
   original_pixel_data(std::vector<unsigned char>()){
@@ -139,6 +140,8 @@ void BitmapFile::read_bmp_file(const std::string& file_name) {
   // Questi sarebbero a questo punto nella forma definita dalla profondità di colore corrente
   if(dib_header.compression != 0)
     reversed_pixel_data = RLECodec::decode_array(original_pixel_data, (BmpCompression) dib_header.compression, dib_header.width, dib_header.height);
+
+  print_pixel_data(reversed_pixel_data);
 
   // procedi alla normale lettura dell'array di pixel
   fix_pixel_array();
@@ -496,8 +499,8 @@ void BitmapFile::print_bitmap_information() {
   std::cout << "Compression: " << dib_header.compression << std::endl;
   std::cout << "Number of colors: " << dib_header.num_colors << std::endl;
 
-  print_pixel_data(original_pixel_data);
-  //print_pixel_data(reversed_pixel_data);
+  //print_pixel_data(original_pixel_data);
+
 }
 
 void BitmapFile::print_pixel_data(const std::vector<unsigned char>& vet) {
@@ -553,7 +556,6 @@ void BitmapFile::copy_bmp(const std::string& file_name) {
     if(dib_header.bits_per_pixel <= 8) {
       int num_colors = (file_header.data_offset - 54)/4;
 
-      //std::cout << "(Save) palette: " << std::endl;
       for(int i = 0; i < num_colors; i++) {
         file_stream.write((char*)dib_header.palette[i], 4);
       }
@@ -629,8 +631,7 @@ void BitmapFile::fill_bmp_header(int width, int height, int bits_per_pixel, int 
   // numero di piani sui quali si sviluppa l'immagine (valore fisso 1)
   dib_header.planes = 1;
 
-  // ATTUALMENTE NON ANCORA SUPPORTATO. Scrivo le immagini prive di compressione
-  //dib_header.compression = compr_mode;
+  dib_header.compression = compr_mode;
   // Avvalora il campo dell'header contenente la palette
   if(palette != 0) {
     dib_header.palette = new unsigned char *[num_color_palette];
@@ -724,10 +725,11 @@ void BitmapFile::retrieve_original_pixel_data() {
 
     // Provvede ad effettuare una compressione dei dati nel caso fosse necessario
     // Non supportato completamente //
-    /*
+
     if(dib_header.compression != 0)
       original_pixel_data = RLECodec::encode_array(original_pixel_data, (BmpCompression) dib_header.compression, dib_header.width, dib_header.height);
-    */
+
+    print_pixel_data(original_pixel_data);
 
   } else {
     /*
